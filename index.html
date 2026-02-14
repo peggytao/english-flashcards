@@ -53,22 +53,15 @@ async function translateWord() {
   const eng = document.getElementById("english").value;
   if (!eng) return;
 
-  const response = await fetch("https://libretranslate.de/translate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      q: eng,
-      source: "en",
-      target: "zh",
-      format: "text"
-    })
-  });
+  const response = await fetch(
+    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(eng)}&langpair=en|zh-CN`
+  );
 
   const data = await response.json();
-  currentTranslation = data.translatedText;
+  const translation = data.responseData.translatedText;
 
-  document.getElementById("result").innerText =
-    eng + " = " + currentTranslation;
+  currentTranslation = translation;
+  document.getElementById("result").innerText = eng + " = " + currentTranslation;
 }
 
 function speakWord() {
@@ -125,3 +118,4 @@ renderList();
 
 </body>
 </html>
+
