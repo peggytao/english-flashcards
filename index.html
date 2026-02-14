@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>英文單字記憶系統</title>
+<style>
+body { font-family: Arial; max-width: 700px; margin: 30px auto; }
+input, button { padding: 8px; margin: 5px 0; }
+.box { border: 1px solid #ccc; padding: 15px; margin-top: 15px; }
+.big { font-size: 22px; font-weight: bold; margin: 10px 0; }
+button { cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h2>📚 英文單字記憶系統</h2>
+
+<input id="english" placeholder="輸入英文單字">
+<button onclick="translateWord()">自動翻譯</button>
+<button onclick="speakWord()">🔊 發音</button>
+<button onclick="saveWord()">💾 新增儲存</button>
+
+<div class="box">
+<div id="result" class="big"></div>
+</div>
+
+<hr>
+
+<h3>🎲 抽考模式</h3>
+<button onclick="randomWord()">隨機抽考</button>
+<button onclick="showAnswer()">顯示答案</button>
+
+<div class="box">
+<div id="quizWord" class="big">尚未抽考</div>
+</div>
+
+<hr>
+
+<h3>📖 已存單字</h3>
+<ul id="wordList"></ul>
+
+<script>
+
+let words = JSON.parse(localStorage.getItem("words")) || [];
+let currentTranslation = "";
+let currentQuizIndex = null;
+
+function saveStorage() {
+  localStorage.setItem("words", JSON.stringify(words));
+}
+
+async function translateWord() {
+  const eng = document.getElementById("english").value;
+  if (!eng) return;
+
+  const response = await fetch("https://libretranslate.de/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      q: eng,
+      source: "en",
+      target: "zh",
+      format: "text"
+    })
+  });
+
+  const data = await response.json();
+  currentTranslation = data.translatedText;
+
+  document.getElementById("result").innerText =
+    eng + " = " + currentTranslation;
+}
+
+function speakWord() {
+  const eng = document.getElementById("english").value;
+  if (!eng) return;
+  const utterance = new SpeechSynthesisUtterance(eng);
+  utterance.lang = "en-US";
+  speechSynthesis.speak(utterance);
+}
+
+function saveWord() {
+  const eng = document.getElementById("english").value;
+  if (!eng || !currentTranslation) return;
+
+  words.push({ eng: eng, chi: currentTranslation });
+  saveStorage();
+  renderList();
+  document.getElementById("english").value = "";
+  document.getElementById("result").innerText = "";
+}
+
+function renderList() {
+  const list = document.getElementById("wordList");
+  list.innerHTML = "";
+  words.forEach((w, i) => {
+    list.innerHTML += `<li>${w.eng} - ${w.chi}
+    <button onclick="deleteWord(${i})">❌</button></li>`;
+  });
+}
+
+function deleteWord(i) {
+  words.splice(i, 1);
+  saveStorage();
+  renderList();
+}
+
+function randomWord() {
+  if (words.length === 0) return;
+  currentQuizIndex = Math.floor(Math.random() * words.length);
+  document.getElementById("quizWord").innerText =
+    words[currentQuizIndex].eng;
+}
+
+function showAnswer() {
+  if (currentQuizIndex === null) return;
+  document.getElementById("quizWord").innerText =
+    words[currentQuizIndex].eng + " = " +
+    words[currentQuizIndex].chi;
+}
+
+renderList();
+
+</script>
+
+</body>
+</html>
